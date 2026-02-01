@@ -1,0 +1,32 @@
+// US Gift Finder — SQLite (dev); easy upgrade to Postgres later
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id         String   @id
+  title      String
+  description String
+  category   String
+  tags       String   // "tag1|tag2|..."
+  price_min  Int
+  price_max  Int
+  amazon_url String?
+  image_url  String?
+  locale     String   @default("US")
+  active     Boolean  @default(true)
+  // embedding  Unsupported("vector") // phase 2
+}
+
+model Session {
+  id                   String   @id
+  created_at           DateTime @default(now())
+  form_json            String
+  result_json          String?
+  request_cost_estimate Float?
+}
