@@ -12,12 +12,14 @@ import {
 } from "@/types/quiz";
 import { ResultsView } from "@/components/ResultsView";
 import { InteractiveMascot } from "@/components/InteractiveMascot";
+import { SystemVisualizer } from "@/components/SystemVisualizer";
 
 // Simplified to 4 essential steps
 const STEPS = [
   { key: "occasion", title: "What's the occasion?", subtitle: "Let's find the perfect gift" },
   { key: "relationship", title: "Who is this gift for?", subtitle: "Tell us about your relationship" },
   { key: "age_range", title: "Their age range?", subtitle: "Helps us match the right vibe" },
+  { key: "interests", title: "Specific Interests?", subtitle: "Hobbies, obsessions, favorite things" },
   { key: "budget", title: "What's your budget?", subtitle: "We'll find options in your range" },
 ] as const;
 
@@ -268,6 +270,42 @@ export default function Home() {
               </div>
             )}
 
+            {currentKey === "interests" && (
+              <div className="space-y-4 animate-scale-in">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Advanced Research
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wide">
+                    Coming Soon
+                  </span>
+                </div>
+                <textarea
+                  placeholder="e.g. Loves photography, hiking, 90s rock, and cooking Italian food..."
+                  className="w-full h-40 p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all text-lg resize-none placeholder:text-slate-400"
+                  value={form.notes}
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    const interests = text.split(/[,.\n]+/).map(s => s.trim()).filter(s => s.length > 2);
+                    setForm(f => ({ ...f, notes: text, interests }));
+                  }}
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-center flex-wrap">
+                  {form.interests.slice(0, 5).map((interest, i) => (
+                    <span key={i} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium animate-pop">
+                      #{interest}
+                    </span>
+                  ))}
+                  {form.interests.length === 0 && (
+                    <p className="text-sm text-slate-500 italic">
+                      This AI feature is optional. Feel free to skip!
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
             {currentKey === "budget" && (
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row gap-6 items-center justify-center">
@@ -283,7 +321,7 @@ export default function Home() {
                         type="number"
                         min={0}
                         max={10000}
-                        value={form.budget_min}
+                        value={form.budget_min || ""}
                         onChange={(e) =>
                           setForm((f) => ({
                             ...f,
@@ -307,7 +345,7 @@ export default function Home() {
                         type="number"
                         min={0}
                         max={10000}
-                        value={form.budget_max}
+                        value={form.budget_max || ""}
                         onChange={(e) =>
                           setForm((f) => ({
                             ...f,
@@ -378,6 +416,16 @@ export default function Home() {
                 "Continue"
               )}
             </button>
+            {currentKey === "interests" && form.interests.length === 0 && (
+              <button
+                type="button"
+                onClick={handleNext}
+                className="mx-auto block sm:hidden text-slate-400 text-sm font-medium hover:text-slate-600 transition-colors"
+                style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, paddingBottom: '1rem', textAlign: 'center' }}
+              >
+                Skip this step
+              </button>
+            )}
           </div>
         </div>
 
@@ -386,6 +434,8 @@ export default function Home() {
           <p>Personalized recommendations in seconds • 100% free</p>
         </div>
       </div>
+      {/* System Visualizer Overlay */}
+      <SystemVisualizer />
     </main>
   );
 }

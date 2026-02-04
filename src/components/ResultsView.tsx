@@ -378,11 +378,11 @@ function GiftCard({
       </div>
 
       <div className="relative mb-4 overflow-hidden rounded-2xl bg-white dark:bg-slate-800 p-4">
-        <img
+        <GiftImage
           src={imgSrc}
           alt={item.title}
-          className={`w-full h-48 object-contain transition-transform duration-500 ${isHovered ? "scale-110" : "scale-100"
-            }`}
+          category={item.category}
+          isHovered={isHovered}
         />
       </div>
 
@@ -431,5 +431,32 @@ function GiftCard({
         )}
       </div>
     </div>
+  );
+}
+
+function GiftImage({ src, alt, category, isHovered }: { src: string, alt: string, category: string, isHovered: boolean }) {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [hasError, setHasError] = useState(false);
+
+  // If source changes (e.g. new results), reset error state
+  if (imgSrc !== src && !hasError) {
+    setImgSrc(src);
+  }
+
+  const handleError = () => {
+    if (!hasError) {
+      setHasError(true);
+      // Fallback to category image if specific URL failed
+      setImgSrc(getGiftImageUrl(category, null));
+    }
+  };
+
+  return (
+    <img
+      src={imgSrc}
+      alt={alt}
+      onError={handleError}
+      className={`w-full h-48 object-contain transition-transform duration-500 ${isHovered ? "scale-110" : "scale-100"}`}
+    />
   );
 }

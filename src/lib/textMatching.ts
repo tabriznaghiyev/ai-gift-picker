@@ -104,7 +104,8 @@ const SYNONYM_MAP: Record<string, string[]> = {
   "truck": ["pickup", "vehicle", "auto", "ford", "chevy", "ram"],
 
   // === HOBBIES & INTERESTS ===
-  "gaming": ["games", "gamer", "video games", "esports", "pc gaming", "console"],
+  // "gaming" is already defined in TECH section
+
   "chess": ["strategy", "board game", "intellectual", "game"],
   "puzzle": ["jigsaw", "brain teaser", "sudoku", "crossword"],
   "board games": ["tabletop", "games", "card games", "strategy"],
@@ -140,12 +141,15 @@ const SYNONYM_MAP: Record<string, string[]> = {
   "birthday": ["bday", "celebration", "anniversary", "party"],
   "wedding": ["marriage", "bride", "groom", "anniversary", "engagement"],
   "anniversary": ["celebration", "wedding", "milestone", "romantic"],
+  "baby shower": ["baby", "newborn", "expecting", "maternity", "infant", "nursery"],
 
   // === AGE GROUPS ===
   "kid": ["child", "children", "boy", "girl", "toddler", "youth"],
   "teen": ["teenager", "adolescent", "youth", "young"],
   "adult": ["grown-up", "mature"],
   "senior": ["elderly", "older", "retired", "grandparent"],
+  "baby": ["infant", "newborn", "toddler", "nursery", "parenting", "baby shower", "maternity"],
+  "parent": ["mother", "father", "mom", "dad", "parenting", "baby"],
 
   // === PERSONALITY TRAITS ===
   "athlete": ["fitness", "sports", "active", "gym", "runner"],

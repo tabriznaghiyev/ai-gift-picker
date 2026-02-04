@@ -1,133 +1,138 @@
-
 import csv
-import hashlib
-import os
+import re
 from pathlib import Path
+import sys
 
-# Paths
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-AMAZON_CSV = PROJECT_ROOT / "amazondataset" / "amazon_products_sales_data_cleaned.csv"
-PRODUCTS_CSV = PROJECT_ROOT / "prisma" / "products.csv"
+# Constants
+EXCHANGE_RATE_INR_TO_USD = 1 / 83.0  # Approx exchange rate
+# Relative paths from scripts/ folder
+INPUT_LARGE_DATASET = Path("../amazondataset2023/Amazon-Products.csv")
+EXISTING_PRODUCTS_CSV = Path("../prisma/products.csv")
+BACKUP_PRODUCTS_CSV = Path("../prisma/products.csv.bak")
 
-# Existing categories for mapping
-CATEGORIES = [
-    "art", "baby", "beauty", "books", "comfort", "cooking", "creative", "electronics",
-    "fashion", "fitness", "food", "games", "garden", "gifts", "home", "jewelry",
-    "kids", "music", "office", "outdoors", "pets", "travel", "wellness"
-]
+def parse_price(price_str):
+    """Parses '₹32,999' or similar to float USD."""
+    if not price_str:
+        return 0.0
+    # Remove chars like ₹, ,
+    clean_str = re.sub(r'[^\d.]', '', price_str)
+    try:
+        val_inr = float(clean_str)
+        return round(val_inr * EXCHANGE_RATE_INR_TO_USD)
+    except ValueError:
+        return 0.0
 
-def map_category(amz_cat):
-    """Fuzzy map Amazon category to our strict list."""
-    if not amz_cat:
-        return "gifts"
+def clean_text(text):
+    if not text:
+        return ""
+    # Remove excessive quotes or newlines
+    return text.replace('"', '').replace('\n', ' ').strip()
+
+def generate_tags(row):
+    """Generates tags from category and name keywords."""
+    tags = set()
     
-    amz_lower = amz_cat.lower()
+    # Add category words
+    main_cat = str(row.get('main_category', '')).lower()
+    sub_cat = str(row.get('sub_category', '')).lower()
     
-    # Direct Keyword Matching
-    if "art" in amz_lower or "craft" in amz_lower: return "art"
-    if "baby" in amz_lower or "diaper" in amz_lower: return "baby"
-    if "beauty" in amz_lower or "skin" in amz_lower or "hair" in amz_lower: return "beauty"
-    if "book" in amz_lower: return "books"
-    if "kitchen" in amz_lower or "cook" in amz_lower: return "cooking"
-    if "tech" in amz_lower or "electronic" in amz_lower or "phone" in amz_lower or "camera" in amz_lower or "headphone" in amz_lower: return "electronics"
-    if "cloth" in amz_lower or "wear" in amz_lower or "shoe" in amz_lower or "fashion" in amz_lower: return "fashion"
-    if "fit" in amz_lower or "gym" in amz_lower or "sport" in amz_lower: return "fitness"
-    if "food" in amz_lower or "snack" in amz_lower: return "food"
-    if "game" in amz_lower or "toy" in amz_lower: return "games"
-    if "garden" in amz_lower or "plant" in amz_lower: return "garden"
-    if "jewel" in amz_lower: return "jewelry"
-    if "kid" in amz_lower or "child" in amz_lower: return "kids"
-    if "music" in amz_lower: return "music"
-    if "office" in amz_lower or "desk" in amz_lower: return "office"
-    if "outdoor" in amz_lower or "camp" in amz_lower: return "outdoors"
-    if "pet" in amz_lower or "dog" in amz_lower or "cat" in amz_lower: return "pets"
-    if "travel" in amz_lower or "trip" in amz_lower: return "travel"
-    if "home" in amz_lower or "decor" in amz_lower: return "home"
+    for part in main_cat.replace('&', ' ').split():
+        if len(part) > 2: tags.add(part)
+    for part in sub_cat.replace('&', ' ').split():
+        if len(part) > 2: tags.add(part)
+        
+    # Add gender/age keywords if present (basic heuristics)
+    name = str(row.get('name', '')).lower()
+    if 'baby' in name or 'baby' in main_cat or 'baby' in sub_cat: tags.add('baby')
+    if 'kids' in name: tags.add('kids')
+    if 'women' in name: tags.add('women'); tags.add('fashion')
+    if 'men' in name and 'women' not in name: tags.add('men'); tags.add('fashion')
     
-    return "gifts" # Default fallback
-
-def generate_tags(title, category):
-    """Generate simple tags from title."""
-    words = title.lower().replace(",", "").split()
-    # Filter for interesting words (simple stoplist)
-    stop = {"with", "and", "for", "the", "a", "by", "of", "in", "to", "set", "pack"}
-    tags = [w for w in words if len(w) > 3 and w not in stop]
-    tags.append(category)
-    return "|".join(list(set(tags))[:10]) # Max 10 tags
+    return "|".join(sorted(tags))
 
 def main():
-    print("Loading existing products...")
-    existing_ids = set()
-    rows = []
+    # 1. Backup existing file
+    if EXISTING_PRODUCTS_CSV.exists():
+        print(f"Backing up {EXISTING_PRODUCTS_CSV} to {BACKUP_PRODUCTS_CSV}")
+        # Using shutil or just read/write implementation
+        import shutil
+        shutil.copy2(EXISTING_PRODUCTS_CSV, BACKUP_PRODUCTS_CSV)
     
-    # Load existing to avoid dupes
-    if PRODUCTS_CSV.exists():
-        with open(PRODUCTS_CSV, "r", encoding="utf-8") as f:
+    # 2. Read existing data to keep
+    existing_rows = []
+    fieldnames = ["id", "title", "description", "category", "tags", "price_min", "price_max", "amazon_url", "image_url", "locale", "active"]
+    
+    if BACKUP_PRODUCTS_CSV.exists():
+        with open(BACKUP_PRODUCTS_CSV, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
-            fieldnames = reader.fieldnames
-            for row in reader:
-                existing_ids.add(row["id"])
-                rows.append(row)
-    else:
-        fieldnames = ["id", "title", "description", "category", "tags", "price_min", "price_max", "amazon_url", "image_url", "locale", "active"]
+            if reader.fieldnames:
+                fieldnames = reader.fieldnames
+            existing_rows = list(reader)
 
-    print(f"Found {len(rows)} existing products.")
+    print(f"Loaded {len(existing_rows)} existing rows.")
 
-    print("Processing Amazon dataset...")
-    new_count = 0
-    with open(AMAZON_CSV, "r", encoding="utf-8") as f:
+    # 3. Process new dataset
+    new_rows = []
+    skipped = 0
+    
+    if not INPUT_LARGE_DATASET.exists():
+        print(f"Error: Input file {INPUT_LARGE_DATASET} not found.")
+        print(f"Current working directory: {Path.cwd()}")
+        return
+
+    print(f"Processing {INPUT_LARGE_DATASET}...")
+    
+    # Increase field size limit for large CSV fields
+    csv.field_size_limit(sys.maxsize)
+
+    with open(INPUT_LARGE_DATASET, 'r', encoding='utf-8', errors='replace') as f:
         reader = csv.DictReader(f)
-        for row in reader:
-            title = row.get("product_title", "")
-            if not title: continue
+        for i, row in enumerate(reader):
+            # Parse prices
+            p_min = parse_price(row.get('discount_price'))
+            p_max = parse_price(row.get('actual_price'))
             
-            # Generate ID
-            id_hash = hashlib.md5(title.encode("utf-8")).hexdigest()[:12]
-            pid = f"amz_{id_hash}"
-            
-            if pid in existing_ids:
+            if p_min == 0 and p_max == 0:
+                skipped += 1
                 continue
-                
-            # Prices
-            try:
-                price_min = float(row.get("discounted_price", 0) or 0)
-                price_max = float(row.get("original_price", 0) or price_min)
-            except ValueError:
-                continue # Skip bad prices
-                
-            if price_min <= 0: continue
 
-            # Map fields
-            cat = map_category(row.get("product_category", ""))
-            tags = generate_tags(title, cat)
+            # Fix Price: ensure min <= max
+            if p_min > p_max: p_min, p_max = p_max, p_min
+            if p_min == 0: p_min = p_max
             
-            new_row = {
-                "id": pid,
-                "title": title[:200], # Trucate for sanity
-                "description": title, # Use title as desc
-                "category": cat,
-                "tags": tags,
-                "price_min": int(price_min),
-                "price_max": int(price_max),
-                "amazon_url": row.get("product_page_url", ""),
-                "image_url": row.get("product_image_url", ""),
-                "locale": "US",
+            # Map fields
+            new_item = {
+                "id": f"amz_2023_{i}",
+                "title": clean_text(row.get('name', 'Unknown Product')),
+                "description": clean_text(row.get('name', '')), # Use title as desc
+                "category": f"{row.get('main_category', 'Other')}|{row.get('sub_category', 'General')}",
+                "tags": generate_tags(row),
+                "price_min": str(int(p_min)),
+                "price_max": str(int(p_max)),
+                "amazon_url": row.get('link', ''),
+                "image_url": row.get('image', ''),
+                "locale": "US", # Converted to USD
                 "active": "true"
             }
             
-            rows.append(new_row)
-            existing_ids.add(pid)
-            new_count += 1
+            # Ensure all fieldnames exist in new_item
+            final_item = {k: new_item.get(k, '') for k in fieldnames}
+            new_rows.append(final_item)
+            
+            if i % 10000 == 0:
+                print(f"Processed {i} rows...", end='\r')
 
-    print(f"Added {new_count} new products from Amazon dataset.")
+    print(f"\nProcessed {len(new_rows)} new rows. Skipped {skipped} invalid rows.")
     
-    # Write back
-    with open(PRODUCTS_CSV, "w", newline="", encoding="utf-8") as f:
+    # 4. Write merged data
+    all_rows = existing_rows + new_rows
+    
+    with open(EXISTING_PRODUCTS_CSV, 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
-    
-    print("Merge complete.")
+        writer.writerows(all_rows)
+        
+    print(f"Successfully wrote {len(all_rows)} rows to {EXISTING_PRODUCTS_CSV}")
 
 if __name__ == "__main__":
     main()

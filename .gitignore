@@ -28,6 +28,18 @@ yarn-error.log*
 # prisma
 prisma/*.db
 prisma/*.db-journal
+prisma/*.csv
+prisma/*.csv.bak
+
+# ml data
+ml/training_data.csv
+ml/feature_spec.json
+ml/model.onnx
+
+# raw datasets
+amazondataset2023/
+*.csv
+!prisma/products.csv # Optional: only if you want a tiny placeholder version
 
 # ide
 .idea

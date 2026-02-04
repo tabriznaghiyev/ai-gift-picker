@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PRODUCTS_CSV = PROJECT_ROOT / "prisma" / "products.csv"
 OUTPUT_CSV = Path(__file__).resolve().parent / "training_data.csv"
 SPEC_PATH = Path(__file__).resolve().parent / "feature_spec.json"
-NUM_PROFILES = 6000  # more profiles for better ML coverage
+NUM_PROFILES = 500  # more profiles for better ML coverage
 TOP_POSITIVE = 6
 NEGATIVE_PER_PROFILE = 20  # negatives per profile (balanced with positives)
 # Stratified: ensure every occasion/relationship/age gets represented
@@ -160,20 +160,81 @@ def main():
     else:
         profile_batches = [random_profile() for _ in range(NUM_PROFILES)]
 
+    # Sort products by price_min to optimize filtering? 
+    # Actually just iterating 550k items 6000 times is 3e9 ops. 
+    # In Python that takes minutes. Let's try to reduce overhead.
+    # Pre-bucketing by price ranges (e.g. $10 buckets)
+    products_by_price = {} # bucket -> list
+    for p in products:
+        bucket = p["price_min"] // 10
+        if bucket not in products_by_price: products_by_price[bucket] = []
+        products_by_price[bucket].append(p)
+    
+    max_price_bucket = max(products_by_price.keys()) if products_by_price else 0
+
+    print(f"Generating data for {len(profile_batches)} profiles...")
+    count = 0
     for profile in profile_batches:
-        in_budget = [p for p in products if p["price_max"] >= profile["budget_min"] and p["price_min"] <= profile["budget_max"]]
-        if len(in_budget) < TOP_POSITIVE + 5:
+        # subset products: price_max >= budget_min AND price_min <= budget_max
+        # Approximation: iterate buckets that overlap with [budget_min, budget_max]
+        # But we need check p["price_max"] >= budget_min too.
+        # Most products have p["price_max"] >= p["price_min"].
+        # If we check buckets p["price_min"] <= budget_max.
+        
+        start_bucket = 0 # Any product could potentially have max_price >= budget_min
+        end_bucket = profile["budget_max"] // 10
+        
+        candidate_products = []
+        for b in range(end_bucket + 1):
+            if b in products_by_price:
+                # Secondary filter
+                for p in products_by_price[b]:
+                     if p["price_max"] >= profile["budget_min"] and p["price_min"] <= profile["budget_max"]:
+                         candidate_products.append(p)
+        
+        # If candidates too few, maybe broaden search or skip
+        if len(candidate_products) < TOP_POSITIVE + 5:
             continue
-        scored = [(score_product(profile["derived_tags"], p), p) for p in in_budget]
+            
+        # Scoring
+        # Optimization: only score if candidate count is manageable? 
+        # If candidate_products is huge (e.g. 50k), scoring all is slow.
+        # But we need top K.
+        # We can sample a subset if too large? 
+        # But we want the BEST recommendations.
+        # Let's just score them.
+        
+        # Using a heap could be faster than full sort if we only need top K?
+        # But we assume the list isn't astronomically large (filtered by budget).
+        
+        scored = [(score_product(profile["derived_tags"], p), p) for p in candidate_products]
+        # Sort by score desc, then random (shuffle to break ties?)
+        # For determinism/quality, improved sort:
         scored.sort(key=lambda x: -x[0])
+        
+        # Top positives
         for i in range(min(TOP_POSITIVE, len(scored))):
             p = scored[i][1]
-            feats = extract_features(profile, p, category_list, spec)
-            rows.append([*feats, p["id"], 1])
-        negatives = [scored[i][1] for i in range(TOP_POSITIVE, len(scored))]
-        for p in random.sample(negatives, min(NEGATIVE_PER_PROFILE, len(negatives))):
-            feats = extract_features(profile, p, category_list, spec)
-            rows.append([*feats, p["id"], 0])
+            if scored[i][0] > 0: # Only positive if score > 0? No, logic says top K.
+                feats = extract_features(profile, p, category_list, spec)
+                rows.append([*feats, p["id"], 1])
+        
+        # Negatives (sample from the rest)
+        start_neg = TOP_POSITIVE
+        num_neg_candidates = len(scored) - start_neg
+        if num_neg_candidates > 0:
+            num_to_pick = min(NEGATIVE_PER_PROFILE, num_neg_candidates)
+            # Efficient sampling without creating new list
+            indices = random.sample(range(start_neg, len(scored)), num_to_pick)
+            for idx in indices:
+                p = scored[idx][1]
+                feats = extract_features(profile, p, category_list, spec)
+                rows.append([*feats, p["id"], 0])
+        
+        count += 1
+        if count % 100 == 0:
+            print(f"Processed {count} profiles...", end='\r')
+    print()
 
     with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
