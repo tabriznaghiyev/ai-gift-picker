@@ -22,7 +22,7 @@ TRAINING_CSV = ML_DIR / "training_data.csv"
 SPEC_PATH = ML_DIR / "feature_spec.json"
 MODEL_ONNX = ML_DIR / "model.onnx"
 
-NUM_FEATURES = 30  # must match feature_spec.feature_names length
+NUM_FEATURES = 31  # must match feature_spec.feature_names length
 
 
 def main():

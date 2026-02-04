@@ -123,7 +123,7 @@ export default function Home() {
               <div
                 key={i}
                 className={`flex-1 h-2 rounded-full mx-1 transition-all duration-500 ${i <= step
-                  ? "bg-gradient-to-r from-purple-500 to-pink-500 shadow-glow"
+                  ? "bg-gradient-to-r from-blue-500 to-cyan-500 shadow-glow"
                   : "bg-white/20"
                   }`}
               />
@@ -153,8 +153,8 @@ export default function Home() {
                   <label
                     key={value}
                     className={`relative flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 card-hover ${form.occasion === value
-                      ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 shadow-glow"
-                      : "border-slate-200 dark:border-slate-700 hover:border-purple-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
+                      ? "border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 shadow-glow"
+                      : "border-slate-200 dark:border-slate-700 hover:border-blue-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                       }`}
                   >
                     <input
@@ -162,14 +162,14 @@ export default function Home() {
                       name="occasion"
                       checked={form.occasion === value}
                       onChange={() => setForm((f) => ({ ...f, occasion: value as Occasion }))}
-                      className="w-5 h-5 text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     />
                     <span className="text-lg font-semibold text-slate-900 dark:text-white">
                       {label}
                     </span>
                     {form.occasion === value && (
                       <div className="absolute top-2 right-2">
-                        <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse-slow" />
+                        <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse-slow" />
                       </div>
                     )}
                   </label>
@@ -183,8 +183,8 @@ export default function Home() {
                   <label
                     key={value}
                     className={`relative flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 card-hover ${form.relationship === value
-                      ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 shadow-glow"
-                      : "border-slate-200 dark:border-slate-700 hover:border-purple-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
+                      ? "border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 shadow-glow"
+                      : "border-slate-200 dark:border-slate-700 hover:border-blue-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
                       }`}
                   >
                     <input
@@ -204,14 +204,14 @@ export default function Home() {
                           age_range: newAge
                         }));
                       }}
-                      className="w-5 h-5 text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      className="w-5 h-5 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     />
                     <span className="text-lg font-semibold text-slate-900 dark:text-white">
                       {label}
                     </span>
                     {form.relationship === value && (
                       <div className="absolute top-2 right-2">
-                        <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse-slow" />
+                        <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse-slow" />
                       </div>
                     )}
                   </label>
@@ -231,8 +231,8 @@ export default function Home() {
                       className={`relative flex items-center justify-center gap-3 p-5 rounded-2xl border-2 transition-all duration-300 ${!isValid
                         ? "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 opacity-40 cursor-not-allowed"
                         : isSelected
-                          ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 shadow-glow cursor-pointer card-hover"
-                          : "border-slate-200 dark:border-slate-700 hover:border-purple-300 hover:bg-white/50 dark:hover:bg-slate-800/50 cursor-pointer card-hover"
+                          ? "border-blue-500 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 shadow-glow cursor-pointer card-hover"
+                          : "border-slate-200 dark:border-slate-700 hover:border-blue-300 hover:bg-white/50 dark:hover:bg-slate-800/50 cursor-pointer card-hover"
                         }`}
                     >
                       <input
@@ -255,7 +255,7 @@ export default function Home() {
                       )}
                       {isValid && isSelected && (
                         <div className="absolute top-2 right-2">
-                          <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse-slow" />
+                          <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse-slow" />
                         </div>
                       )}
                     </label>
@@ -272,7 +272,7 @@ export default function Home() {
                       Minimum
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-purple-600">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-blue-600">
                         $
                       </span>
                       <input
@@ -286,7 +286,7 @@ export default function Home() {
                             budget_min: Math.max(0, parseInt(e.target.value, 10) || 0),
                           }))
                         }
-                        className="w-full sm:w-32 pl-10 pr-4 py-4 text-2xl font-bold rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
+                        className="w-full sm:w-32 pl-10 pr-4 py-4 text-2xl font-bold rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
                       />
                     </div>
                   </div>
@@ -296,7 +296,7 @@ export default function Home() {
                       Maximum
                     </label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-purple-600">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-blue-600">
                         $
                       </span>
                       <input
@@ -310,7 +310,7 @@ export default function Home() {
                             budget_max: Math.max(0, parseInt(e.target.value, 10) || 0),
                           }))
                         }
-                        className="w-full sm:w-32 pl-10 pr-4 py-4 text-2xl font-bold rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
+                        className="w-full sm:w-32 pl-10 pr-4 py-4 text-2xl font-bold rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all"
                       />
                     </div>
                   </div>
@@ -331,8 +331,8 @@ export default function Home() {
             </div>
           )}
 
-          {/* Navigation Buttons */}
-          <div className="flex gap-3 mt-8">
+          {/* Navigation Buttons (Sticky Bottom) */}
+          <div className="sticky bottom-0 -mx-6 -mb-6 p-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 rounded-b-3xl z-10 flex gap-3 mt-8">
             {step > 0 && (
               <button
                 type="button"
@@ -346,7 +346,7 @@ export default function Home() {
               type="button"
               onClick={handleNext}
               disabled={loading}
-              className="flex-1 px-8 py-4 rounded-2xl btn-gradient text-white text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-8 py-4 rounded-2xl btn-gradient text-white text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-blue-500/30"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-3">
