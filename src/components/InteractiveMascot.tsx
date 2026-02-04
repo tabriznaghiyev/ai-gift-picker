@@ -1,22 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export function InteractiveMascot() {
     const [eyePosition, setEyePosition] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
-            // Calculate angle and distance from center of screen (or mascot position)
-            // Ideally, we want the eyes to track relative to the mascot's position on screen.
-            // Since the mascot is fixed bottom-right, we can approximate or use a simple logic:
-            // Map mouse X (0 to innerWidth) to eye X range (-X to +X)
-            // Map mouse Y (0 to innerHeight) to eye Y range (-Y to +Y)
-
             const { innerWidth, innerHeight } = window;
-            const x = (e.clientX / innerWidth - 0.5) * 10; // Range -5 to 5 px
-            const y = (e.clientY / innerHeight - 0.5) * 10; // Range -5 to 5 px
-
+            const x = (e.clientX / innerWidth - 0.5) * 10;
+            const y = (e.clientY / innerHeight - 0.5) * 10;
             setEyePosition({ x, y });
         };
 
@@ -26,7 +20,11 @@ export function InteractiveMascot() {
 
     return (
         <div className="fixed bottom-8 right-8 z-50 pointer-events-none sm:pointer-events-auto group">
-            <div className="relative w-24 h-24 animate-float transition-transform duration-300 hover:scale-110 cursor-pointer">
+            <Link
+                href="/showcase"
+                className="block relative w-24 h-24 animate-float animate-ring-pulse transition-transform duration-300 hover:scale-110 cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+                aria-label="View project info and stats"
+            >
                 {/* Glow effect */}
                 <div className="absolute inset-0 bg-blue-400 rounded-full blur-xl opacity-20 animate-pulse-slow"></div>
 
@@ -62,11 +60,15 @@ export function InteractiveMascot() {
                     <rect x="80" y="35" width="5" height="20" rx="2" fill="#94a3b8" />
                 </svg>
 
+                {/* Info badge */}
+                <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white shadow-lg">
+                    i
+                </span>
                 {/* Chat Bubble (appears on hover) */}
-                <div className="absolute bottom-full right-0 mb-2 w-40 p-3 bg-white dark:bg-slate-800 rounded-2xl rounded-tr-none shadow-lg text-xs text-slate-700 dark:text-slate-300 transform scale-0 group-hover:scale-100 transition-transform origin-bottom-right duration-200">
-                    I'm here to help you find the perfect gift! 🎁
+                <div className="absolute bottom-full right-0 mb-2 w-44 p-3 bg-white dark:bg-slate-800 rounded-2xl rounded-tr-none shadow-lg text-xs text-slate-700 dark:text-slate-300 transform scale-0 group-hover:scale-100 transition-transform origin-bottom-right duration-200">
+                    I&apos;m here to help! Click me to see project stats &amp; highlights 🚀
                 </div>
-            </div>
+            </Link>
         </div>
     );
 }

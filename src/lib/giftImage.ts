@@ -72,21 +72,53 @@ const CATEGORY_IMAGES: Record<string, string> = {
 
 // Keyword fallbacks for partial matches
 const KEYWORD_IMAGES: Record<string, string> = {
+  // Electronics & Gadgets
   "gaming": "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80",
   "game": "https://images.unsplash.com/photo-1612036782180-6f0b6cd846fe?w=800&q=80",
   "tech": "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800&q=80",
+  "phone": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80",
+  "laptop": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80",
+  "audio": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80",
+
+  // Home & Kitchen
   "cook": "https://images.unsplash.com/photo-1556911220-bff31c812dba?w=800&q=80",
+  "kitchen": "https://images.unsplash.com/photo-1556910103-1c02745a30bf?w=800&q=80",
+  "home": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80",
+  "decor": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=80",
+  "furniture": "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80",
+  "tool": "https://images.unsplash.com/photo-1581235720704-06d3acfcb363?w=800&q=80",
+
+  // Fashion & Accessories
+  "jewelry": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&q=80",
+  "watch": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
+  "bag": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&q=80",
+  "shoe": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800&q=80",
+  "clothing": "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=800&q=80",
+
+  // Hobbies & Leisure
   "fitness": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80",
   "book": "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=800&q=80",
   "music": "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&q=80",
   "outdoor": "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=80",
   "travel": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&q=80",
-  "jewelry": "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&q=80",
-  "watch": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
-  "beauty": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&q=80",
   "art": "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&q=80",
-  "home": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80",
+
+  // Toys & Kids
+  "toy": "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=800&q=80",
+  "puzzle": "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=800&q=80",
+  "lego": "https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=800&q=80",
+  "doll": "https://images.unsplash.com/photo-1582239632832-6a682855b721?w=800&q=80",
+  "car": "https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=800&q=80",
+  "baby": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&q=80",
+
+  // Beauty
+  "beauty": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=800&q=80",
+  "perfume": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80",
+  "makeup": "https://images.unsplash.com/photo-1522335789203-abd652327ed8?w=800&q=80",
+
+  // Office
   "office": "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?w=800&q=80",
+  "desk": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800&q=80",
 };
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1513201099705-a9746e1e201f?w=800&q=80";

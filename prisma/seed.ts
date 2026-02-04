@@ -60,10 +60,16 @@ async function main() {
     process.exit(1);
   }
 
-  let count = 0;
-  for (const line of rows) {
+  console.log(`Parsed ${rows.length} rows.`);
+
+  // Batch insert using createMany
+  const BATCH_SIZE = 500;
+  let batch: any[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const line = rows[i];
     const cells = parseCsvRow(line);
-    const get = (i: number) => (i >= 0 && cells[i] !== undefined ? cells[i].trim() : "");
+    const get = (idx: number) => (idx >= 0 && cells[idx] !== undefined ? cells[idx].trim() : "");
     const id = get(idIdx);
     if (!id) continue;
 
@@ -71,38 +77,63 @@ async function main() {
     const priceMax = parseInt(get(priceMaxIdx), 10) || priceMin || 99;
     const active = activeIdx >= 0 ? get(activeIdx).toLowerCase() !== "false" && get(activeIdx) !== "0" : true;
 
-    await prisma.product.upsert({
-      where: { id },
-      create: {
-        id,
-        title: get(titleIdx) || "Untitled",
-        description: get(descriptionIdx) || "",
-        category: get(categoryIdx) || "Other",
-        tags: get(tagsIdx) || "",
-        price_min: priceMin,
-        price_max: priceMax,
-        amazon_url: amazonUrlIdx >= 0 ? get(amazonUrlIdx) || null : null,
-        image_url: imageUrlIdx >= 0 ? get(imageUrlIdx) || null : null,
-        locale: localeIdx >= 0 ? get(localeIdx) || "US" : "US",
-        active,
-      },
-      update: {
-        title: get(titleIdx) || "Untitled",
-        description: get(descriptionIdx) || "",
-        category: get(categoryIdx) || "Other",
-        tags: get(tagsIdx) || "",
-        price_min: priceMin,
-        price_max: priceMax,
-        amazon_url: amazonUrlIdx >= 0 ? get(amazonUrlIdx) || null : undefined,
-        image_url: imageUrlIdx >= 0 ? get(imageUrlIdx) || null : undefined,
-        locale: localeIdx >= 0 ? get(localeIdx) || "US" : undefined,
-        active,
-      },
+    batch.push({
+      id,
+      title: get(titleIdx) || "Untitled",
+      description: get(descriptionIdx) || "",
+      category: get(categoryIdx) || "Other",
+      tags: get(tagsIdx) || "",
+      price_min: priceMin,
+      price_max: priceMax,
+      amazon_url: amazonUrlIdx >= 0 ? get(amazonUrlIdx) || null : null,
+      image_url: imageUrlIdx >= 0 ? get(imageUrlIdx) || null : null,
+      locale: localeIdx >= 0 ? get(localeIdx) || "US" : "US",
+      active,
     });
-    count++;
+
+    if (batch.length >= BATCH_SIZE) {
+      // Use createMany with skipDuplicates usually, but SQLite support varies by Prisma version.
+      // If skipDuplicates is not supported, we might fail.
+      // Safe approach: transaction with upserts or just try createMany.
+      // SQLite connector DOES support createMany in recent Prisma.
+      try {
+        await prisma.product.createMany({
+          data: batch,
+        });
+      } catch (e) {
+        console.error(`Batch failed, falling back to upsert for this batch (size ${batch.length})`);
+        for (const item of batch) {
+          await prisma.product.upsert({
+            where: { id: item.id },
+            create: item,
+            update: item,
+          });
+        }
+      }
+      batch = [];
+      if (i % 5000 === 0) console.log(`Processed ${i} rows...`);
+    }
   }
 
-  console.log(`Seeded ${count} products from ${CSV_PATH}`);
+  // Final batch
+  if (batch.length > 0) {
+    try {
+      await prisma.product.createMany({
+        data: batch,
+        skipDuplicates: true,
+      });
+    } catch (e) {
+      for (const item of batch) {
+        await prisma.product.upsert({
+          where: { id: item.id },
+          create: item,
+          update: item,
+        });
+      }
+    }
+  }
+
+  console.log(`Seeded products from ${CSV_PATH}`);
 }
 
 main()

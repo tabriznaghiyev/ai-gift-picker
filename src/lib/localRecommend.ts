@@ -41,7 +41,7 @@ export function buildLocalProfile(form: QuizForm): RecipientProfile {
     form.age_range,
     ...expandedInterests, // Use expanded interests instead of raw
     ...form.daily_life,
-  ].filter(Boolean).map((t) => String(t).toLowerCase().replace(/\s+/g, "_"));
+  ].filter(Boolean).map((t) => String(t).toLowerCase().replace(/[-_]/g, " ").trim());
 
   const ranked_intents = [
     occasionLabel,
@@ -68,11 +68,35 @@ export function rerankLocal(
   candidates: CandidateProduct[],
   form: QuizForm
 ): RecommendResult {
-  const top6 = candidates.slice(0, 6);
+  // Diversity Filter: Avoid showing too many identical types of products (e.g., 3 baby cars)
+  const filteredCandidates: CandidateProduct[] = [];
+  const seenSubCategories = new Set<string>();
+  const seenKeywords = new Set<string>();
+
+  for (const c of candidates) {
+    if (filteredCandidates.length >= 6) break;
+
+    const subCategory = c.category.split('|')[1] || "General";
+    // Check for high similarity in title words (first 2 words)
+    const titleWords = c.title.toLowerCase().split(/\s+/).slice(0, 2).join(' ');
+
+    // Allow up to 2 items from same sub-category across top 6, but only 1 in top 3
+    const subCatLimit = filteredCandidates.length < 3 ? 1 : 2;
+    const subCatCount = filteredCandidates.filter(p => p.category.split('|')[1] === subCategory).length;
+
+    if (subCatCount < subCatLimit && !seenKeywords.has(titleWords)) {
+      filteredCandidates.push(c);
+      seenKeywords.add(titleWords);
+    }
+  }
+
+  // Fallback if filtering was too aggressive
+  const finalTop6 = filteredCandidates.length >= 3 ? filteredCandidates : candidates.slice(0, 6);
+
   const occasionLabel = OCCASION_LABELS[form.occasion] ?? form.occasion;
   const relationshipLabel = RELATIONSHIP_LABELS[form.relationship] ?? form.relationship;
 
-  const top3 = top6.slice(0, 3).map((c, i) => ({
+  const top3 = finalTop6.slice(0, 3).map((c, i) => ({
     product_id: c.id,
     score: 10 - i,
     why_bullets: [
@@ -85,7 +109,7 @@ export function rerankLocal(
     best_for_label: `Best for ${relationshipLabel} — ${occasionLabel}`,
   }));
 
-  const alternatives_3 = top6.slice(3, 6).map((c, i) => ({
+  const alternatives_3 = finalTop6.slice(3, 6).map((c, i) => ({
     product_id: c.id,
     score: 7 - i,
     why_bullets: [
