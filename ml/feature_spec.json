@@ -19,6 +19,7 @@
     "other"
   ],
   "age_range_values": [
+    "0-12",
     "13-17",
     "18-24",
     "25-34",
@@ -67,6 +68,7 @@
     "age_3",
     "age_4",
     "age_5",
+    "age_6",
     "budget_min_norm",
     "budget_max_norm",
     "interest_count_norm",
@@ -78,6 +80,7 @@
     "price_in_budget"
   ],
   "category_list": [
+    "art",
     "baby",
     "beauty",
     "books",
@@ -94,6 +97,7 @@
     "home",
     "jewelry",
     "kids",
+    "music",
     "office",
     "outdoors",
     "pets",

@@ -19,6 +19,7 @@ export type Relationship =
   | "other";
 
 export type AgeRange =
+  | "0-12"
   | "13-17"
   | "18-24"
   | "25-34"
@@ -74,6 +75,7 @@ export const RELATIONSHIPS: { value: Relationship; label: string }[] = [
 ];
 
 export const AGE_RANGES: { value: AgeRange; label: string }[] = [
+  { value: "0-12", label: "0–12" },
   { value: "13-17", label: "13–17" },
   { value: "18-24", label: "18–24" },
   { value: "25-34", label: "25–34" },

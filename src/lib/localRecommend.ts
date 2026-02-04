@@ -4,6 +4,7 @@
 
 import type { QuizForm } from "@/types/quiz";
 import type { RecipientProfile, CandidateProduct, RecommendResult } from "@/types/recommend";
+import { expandInterests } from "./textMatching";
 
 const OCCASION_LABELS: Record<string, string> = {
   birthday: "birthdays",
@@ -31,11 +32,14 @@ export function buildLocalProfile(form: QuizForm): RecipientProfile {
   const occasionLabel = OCCASION_LABELS[form.occasion] ?? form.occasion;
   const relationshipLabel = RELATIONSHIP_LABELS[form.relationship] ?? form.relationship;
 
+  // Expand interests with synonyms so "cook" matches "cooking", "bmw" matches "cars"
+  const expandedInterests = expandInterests(form.interests);
+
   const derived_tags = [
     form.occasion,
     form.relationship,
     form.age_range,
-    ...form.interests,
+    ...expandedInterests, // Use expanded interests instead of raw
     ...form.daily_life,
   ].filter(Boolean).map((t) => String(t).toLowerCase().replace(/\s+/g, "_"));
 
@@ -43,7 +47,7 @@ export function buildLocalProfile(form: QuizForm): RecipientProfile {
     occasionLabel,
     "thoughtful",
     "practical",
-    ...form.interests.slice(0, 2),
+    ...form.interests.slice(0, 2), // Keep original for display
   ].filter(Boolean);
 
   return {

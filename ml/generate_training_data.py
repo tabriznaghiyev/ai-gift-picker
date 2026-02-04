@@ -23,7 +23,7 @@ STRATIFY_BY_OCCASION = True
 
 OCCASIONS = ["birthday", "anniversary", "housewarming", "graduation", "thank-you", "holiday", "baby-shower", "other"]
 RELATIONSHIPS = ["friend", "partner", "parent", "coworker", "sibling", "child", "other"]
-AGE_RANGES = ["13-17", "18-24", "25-34", "35-44", "45-54", "55+"]
+AGE_RANGES = ["0-12", "13-17", "18-24", "25-34", "35-44", "45-54", "55+"]
 DAILY_LIFE = ["student", "office", "remote_worker", "gamer", "gym", "traveler", "new_parent", "cooking", "outdoors", "creative", "pet_lover", "other"]
 
 INTEREST_POOL = [
@@ -118,7 +118,7 @@ def extract_features(profile: dict, product: dict, category_list: list, spec: di
 
     occasion_onehot = [1 if i == occ else 0 for i in range(8)]
     relationship_onehot = [1 if i == rel else 0 for i in range(7)]
-    age_onehot = [1 if i == age else 0 for i in range(6)]
+    age_onehot = [1 if i == age else 0 for i in range(7)]
 
     budget_min_norm = min(1.0, profile["budget_min"] / spec["budget_max_norm"])
     budget_max_norm = min(1.0, profile["budget_max"] / spec["budget_max_norm"])
