@@ -11,6 +11,7 @@ import {
   type AgeRange,
 } from "@/types/quiz";
 import { ResultsView } from "@/components/ResultsView";
+import { InteractiveMascot } from "@/components/InteractiveMascot";
 
 // Simplified to 4 essential steps
 const STEPS = [
@@ -102,6 +103,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      {/* Interactive Mascot */}
+      <InteractiveMascot />
+
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-8 sm:mb-12 animate-slide-in">
