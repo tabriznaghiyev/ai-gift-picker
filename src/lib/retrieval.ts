@@ -6,6 +6,7 @@
 import { prisma } from "@/lib/db";
 import type { RecipientProfile } from "@/types/recommend";
 import type { CandidateProduct } from "@/types/recommend";
+import { fuzzyMatch, matchScore, expandInterests } from "./textMatching";
 
 const MAX_CANDIDATES = 30;
 
@@ -19,22 +20,39 @@ function scoreProduct(
   profile: RecipientProfile
 ): number {
   const tags = parseTags(product.tags);
-  const derived = profile.derived_tags.map((t) => t.toLowerCase());
+  const derived = profile.derived_tags;
   const title = product.title.toLowerCase();
   const category = product.category.toLowerCase();
   const desc = (product.description || "").toLowerCase();
 
   let score = 0;
+
+  // Use fuzzy matching for better results
   for (const tag of derived) {
-    if (tags.some((t) => t.includes(tag) || tag.includes(t))) score += 3;
-    if (title.includes(tag)) score += 2;
-    if (category.includes(tag)) score += 2;
-    if (desc.includes(tag)) score += 1;
+    // Check tags with fuzzy matching
+    for (const productTag of tags) {
+      const matchQuality = matchScore(tag, productTag);
+      if (matchQuality > 0) {
+        score += matchQuality; // 0-5 points based on match quality
+      }
+    }
+
+    // Check title and category with fuzzy matching
+    if (fuzzyMatch(tag, title)) score += 3;
+    if (fuzzyMatch(tag, category)) score += 3;
+    if (fuzzyMatch(tag, desc)) score += 1;
   }
+
+  // Check ranked intents (occasion-specific terms)
   for (const intent of profile.ranked_intents.slice(0, 3)) {
-    const i = intent.toLowerCase();
-    if (title.includes(i) || category.includes(i) || tags.some((t) => t.includes(i))) score += 1;
+    if (fuzzyMatch(intent, title) || fuzzyMatch(intent, category)) {
+      score += 2;
+    }
+    for (const productTag of tags) {
+      if (fuzzyMatch(intent, productTag)) score += 1;
+    }
   }
+
   return score;
 }
 

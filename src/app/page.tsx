@@ -5,31 +5,27 @@ import {
   OCCASIONS,
   RELATIONSHIPS,
   AGE_RANGES,
-  DAILY_LIFE_OPTIONS,
   type QuizForm,
   type Occasion,
   type Relationship,
   type AgeRange,
-  type DailyLife,
 } from "@/types/quiz";
 import { ResultsView } from "@/components/ResultsView";
 
+// Simplified to 4 essential steps
 const STEPS = [
-  { key: "occasion", title: "What's the occasion?" },
-  { key: "relationship", title: "Who is it for?" },
-  { key: "age_range", title: "Age range?" },
-  { key: "budget", title: "Budget (min–max $)?" },
-  { key: "interests", title: "Interests (add any that apply)" },
-  { key: "daily_life", title: "Daily life / lifestyle" },
-  { key: "avoid", title: "Anything to avoid? Notes?" },
+  { key: "occasion", title: "What's the occasion?", subtitle: "Let's find the perfect gift" },
+  { key: "relationship", title: "Who is this gift for?", subtitle: "Tell us about your relationship" },
+  { key: "age_range", title: "Their age range?", subtitle: "Helps us match the right vibe" },
+  { key: "budget", title: "What's your budget?", subtitle: "We'll find options in your range" },
 ] as const;
 
 const defaultForm: QuizForm = {
   occasion: "birthday",
   relationship: "friend",
   age_range: "25-34",
-  budget_min: 15,
-  budget_max: 50,
+  budget_min: 20,
+  budget_max: 80,
   interests: [],
   daily_life: [],
   avoid_list: [],
@@ -39,7 +35,6 @@ const defaultForm: QuizForm = {
 export default function Home() {
   const [form, setForm] = useState<QuizForm>(defaultForm);
   const [step, setStep] = useState(0);
-  const [interestInput, setInterestInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Awaited<ReturnType<typeof fetchRecommend>> | null>(null);
@@ -48,17 +43,7 @@ export default function Home() {
     const res = await fetch("/api/recommend", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        occasion: body.occasion,
-        relationship: body.relationship,
-        age_range: body.age_range,
-        budget_min: body.budget_min,
-        budget_max: body.budget_max,
-        interests: body.interests,
-        daily_life: body.daily_life,
-        avoid_list: body.avoid_list,
-        notes: body.notes,
-      }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
@@ -68,8 +53,9 @@ export default function Home() {
   }
 
   const handleNext = () => {
-    if (step < STEPS.length - 1) setStep((s) => s + 1);
-    else {
+    if (step < STEPS.length - 1) {
+      setStep((s) => s + 1);
+    } else {
       setLoading(true);
       setError(null);
       fetchRecommend(form)
@@ -81,17 +67,23 @@ export default function Home() {
 
   const handleBack = () => setStep((s) => Math.max(0, s - 1));
 
-  const addInterest = () => {
-    const v = interestInput.trim();
-    if (v && !form.interests.includes(v)) {
-      setForm((f) => ({ ...f, interests: [...f.interests, v] }));
-      setInterestInput("");
-    }
+  // Smart age filtering based on relationship
+  const getValidAgeRanges = (relationship: Relationship) => {
+    const ageMap: Record<Relationship, AgeRange[]> = {
+      child: ["0-12", "13-17", "18-24"], // Toddlers/Kids/Teens + Young Adult children
+      parent: ["35-44", "45-54", "55+"], // Parents generally older
+      partner: ["18-24", "25-34", "35-44", "45-54", "55+"], // Partners must be adults
+      coworker: ["18-24", "25-34", "35-44", "45-54", "55+"], // Work colleagues usually adults
+      friend: ["0-12", "13-17", "18-24", "25-34", "35-44", "45-54", "55+"], // Friends can be any age (including kids)
+      sibling: ["0-12", "13-17", "18-24", "25-34", "35-44", "45-54", "55+"], // Siblings any age
+      other: ["0-12", "13-17", "18-24", "25-34", "35-44", "45-54", "55+"],
+    };
+    // Fallback if specific relationship not in map
+    return ageMap[relationship] || AGE_RANGES.map(r => r.value);
   };
 
-  const removeInterest = (v: string) => {
-    setForm((f) => ({ ...f, interests: f.interests.filter((x) => x !== v) }));
-  };
+  const validAges = getValidAgeRanges(form.relationship);
+  const isAgeValid = (age: AgeRange) => validAges.includes(age);
 
   if (result) {
     return (
@@ -100,275 +92,295 @@ export default function Home() {
         onChangeOptions={() => {
           setResult(null);
           setStep(0);
-          // Keep current form so they can change options without losing answers
         }}
       />
     );
   }
 
   const currentKey = STEPS[step].key;
+  const progress = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white dark:from-slate-900 dark:to-slate-800">
-      <div className="max-w-lg mx-auto px-4 py-10">
-        <header className="text-center mb-8 relative">
-          <span className="absolute top-0 right-0 text-xs font-medium px-2.5 py-1 rounded-full bg-amber-200/80 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200">
-            Test site
-          </span>
-          <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">
+    <main className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full max-w-2xl">
+        {/* Header */}
+        <div className="text-center mb-8 sm:mb-12 animate-slide-in">
+          <div className="inline-block mb-4">
+            <div className="text-5xl sm:text-6xl mb-4 animate-float">🎁</div>
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-3 gradient-text">
             Gift Finder
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">
-            Answer a few questions — we’ll suggest ideas that fit
+          <p className="text-lg sm:text-xl text-white/80">
+            Discover the perfect gift in seconds
           </p>
-        </header>
+        </div>
 
-        <div className="mb-6">
-          <div className="flex gap-1">
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-3">
             {STEPS.map((_, i) => (
               <div
                 key={i}
-                className={`h-2 flex-1 rounded-full transition-colors ${
-                  i <= step ? "bg-amber-400" : "bg-slate-200 dark:bg-slate-700"
-                }`}
+                className={`flex-1 h-2 rounded-full mx-1 transition-all duration-500 ${i <= step
+                  ? "bg-gradient-to-r from-purple-500 to-pink-500 shadow-glow"
+                  : "bg-white/20"
+                  }`}
               />
             ))}
           </div>
-          <p className="text-sm text-slate-500 mt-2">
+          <p className="text-white/60 text-sm text-center">
             Step {step + 1} of {STEPS.length}
           </p>
         </div>
 
-        <div className="bg-white/90 dark:bg-slate-800/90 rounded-2xl shadow-md border border-amber-100 dark:border-slate-700 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">
-            {STEPS[step].title}
-          </h2>
-
-        {currentKey === "occasion" && (
-          <div className="space-y-2">
-            {OCCASIONS.map(({ value, label }) => (
-              <label
-                key={value}
-                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                  form.occasion === value
-                    ? "border-amber-400 bg-amber-50 dark:bg-amber-900/20"
-                    : "border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="occasion"
-                  checked={form.occasion === value}
-                  onChange={() => setForm((f) => ({ ...f, occasion: value as Occasion }))}
-                  className="rounded-full border-slate-300 text-amber-500"
-                />
-                <span className="font-medium">{label}</span>
-              </label>
-            ))}
+        {/* Main Card */}
+        <div className="glass rounded-3xl shadow-xl p-6 sm:p-8 lg:p-10 mb-6 animate-scale-in">
+          <div className="mb-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
+              {STEPS[step].title}
+            </h2>
+            <p className="text-slate-600 dark:text-slate-300">
+              {STEPS[step].subtitle}
+            </p>
           </div>
-        )}
 
-        {currentKey === "relationship" && (
-          <div className="space-y-2">
-            {RELATIONSHIPS.map(({ value, label }) => (
-              <label
-                key={value}
-                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                  form.relationship === value
-                    ? "border-amber-400 bg-amber-50 dark:bg-amber-900/20"
-                    : "border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="relationship"
-                  checked={form.relationship === value}
-                  onChange={() => setForm((f) => ({ ...f, relationship: value as Relationship }))}
-                  className="rounded-full border-slate-300 text-amber-500"
-                />
-                <span className="font-medium">{label}</span>
-              </label>
-            ))}
-          </div>
-        )}
-
-        {currentKey === "age_range" && (
-          <div className="space-y-2">
-            {AGE_RANGES.map(({ value, label }) => (
-              <label
-                key={value}
-                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                  form.age_range === value
-                    ? "border-amber-400 bg-amber-50 dark:bg-amber-900/20"
-                    : "border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="age_range"
-                  checked={form.age_range === value}
-                  onChange={() => setForm((f) => ({ ...f, age_range: value as AgeRange }))}
-                  className="rounded-full border-slate-300 text-amber-500"
-                />
-                <span className="font-medium">{label}</span>
-              </label>
-            ))}
-          </div>
-        )}
-
-        {currentKey === "budget" && (
-          <div className="flex gap-6 items-end">
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Min $</label>
-              <input
-                type="number"
-                min={0}
-                max={10000}
-                value={form.budget_min}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, budget_min: Math.max(0, parseInt(e.target.value, 10) || 0) }))
-                }
-                className="w-28 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 focus:ring-2 focus:ring-amber-400"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Max $</label>
-              <input
-                type="number"
-                min={0}
-                max={10000}
-                value={form.budget_max}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, budget_max: Math.max(0, parseInt(e.target.value, 10) || 0) }))
-                }
-                className="w-28 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 focus:ring-2 focus:ring-amber-400"
-              />
-            </div>
-          </div>
-        )}
-
-        {currentKey === "interests" && (
-          <div>
-            <div className="flex gap-2 mb-3">
-              <input
-                type="text"
-                placeholder="e.g. cooking, gaming, travel"
-                value={interestInput}
-                onChange={(e) => setInterestInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addInterest())}
-                className="flex-1 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 focus:ring-2 focus:ring-amber-400"
-              />
-              <button
-                type="button"
-                onClick={addInterest}
-                className="px-5 py-2.5 rounded-xl bg-amber-500 text-white font-medium hover:bg-amber-600"
-              >
-                Add
-              </button>
-            </div>
-            {form.interests.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {form.interests.map((v) => (
-                  <span
-                    key={v}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-sm font-medium text-amber-800 dark:text-amber-200"
+          {/* Step Content */}
+          <div className="min-h-[300px]">
+            {currentKey === "occasion" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {OCCASIONS.map(({ value, label }) => (
+                  <label
+                    key={value}
+                    className={`relative flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 card-hover ${form.occasion === value
+                      ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 shadow-glow"
+                      : "border-slate-200 dark:border-slate-700 hover:border-purple-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
+                      }`}
                   >
-                    {v}
-                    <button
-                      type="button"
-                      onClick={() => removeInterest(v)}
-                      className="text-amber-600 hover:text-amber-800 rounded-full p-0.5"
-                      aria-label="Remove"
-                    >
-                      ×
-                    </button>
-                  </span>
+                    <input
+                      type="radio"
+                      name="occasion"
+                      checked={form.occasion === value}
+                      onChange={() => setForm((f) => ({ ...f, occasion: value as Occasion }))}
+                      className="w-5 h-5 text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                    />
+                    <span className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {label}
+                    </span>
+                    {form.occasion === value && (
+                      <div className="absolute top-2 right-2">
+                        <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse-slow" />
+                      </div>
+                    )}
+                  </label>
                 ))}
               </div>
             )}
-          </div>
-        )}
 
-        {currentKey === "daily_life" && (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {DAILY_LIFE_OPTIONS.map(({ value, label }) => (
-              <label
-                key={value}
-                className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                  form.daily_life.includes(value)
-                    ? "border-amber-400 bg-amber-50 dark:bg-amber-900/20"
-                    : "border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                }`}
+            {currentKey === "relationship" && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {RELATIONSHIPS.map(({ value, label }) => (
+                  <label
+                    key={value}
+                    className={`relative flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 card-hover ${form.relationship === value
+                      ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 shadow-glow"
+                      : "border-slate-200 dark:border-slate-700 hover:border-purple-300 hover:bg-white/50 dark:hover:bg-slate-800/50"
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="relationship"
+                      checked={form.relationship === value}
+                      onChange={() => {
+                        const newRel = value as Relationship;
+                        const validForNewRel = getValidAgeRanges(newRel);
+
+                        // If current age is invalid for new relationship, auto-select the first valid one
+                        const newAge = validForNewRel.includes(form.age_range) ? form.age_range : validForNewRel[0];
+
+                        setForm((f) => ({
+                          ...f,
+                          relationship: newRel,
+                          age_range: newAge
+                        }));
+                      }}
+                      className="w-5 h-5 text-purple-600 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                    />
+                    <span className="text-lg font-semibold text-slate-900 dark:text-white">
+                      {label}
+                    </span>
+                    {form.relationship === value && (
+                      <div className="absolute top-2 right-2">
+                        <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse-slow" />
+                      </div>
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {currentKey === "age_range" && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {AGE_RANGES.map(({ value, label }) => {
+                  const isValid = isAgeValid(value as AgeRange);
+                  const isSelected = form.age_range === value;
+
+                  return (
+                    <label
+                      key={value}
+                      className={`relative flex items-center justify-center gap-3 p-5 rounded-2xl border-2 transition-all duration-300 ${!isValid
+                        ? "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 opacity-40 cursor-not-allowed"
+                        : isSelected
+                          ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 shadow-glow cursor-pointer card-hover"
+                          : "border-slate-200 dark:border-slate-700 hover:border-purple-300 hover:bg-white/50 dark:hover:bg-slate-800/50 cursor-pointer card-hover"
+                        }`}
+                    >
+                      <input
+                        type="radio"
+                        name="age_range"
+                        checked={isSelected}
+                        onChange={() => isValid && setForm((f) => ({ ...f, age_range: value as AgeRange }))}
+                        disabled={!isValid}
+                        className="sr-only"
+                      />
+                      <span className={`text-xl font-bold ${isValid ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-600 line-through'}`}>
+                        {label}
+                      </span>
+                      {!isValid && (
+                        <div className="absolute top-1 right-1">
+                          <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </div>
+                      )}
+                      {isValid && isSelected && (
+                        <div className="absolute top-2 right-2">
+                          <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse-slow" />
+                        </div>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            {currentKey === "budget" && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row gap-6 items-center justify-center">
+                  <div className="w-full sm:w-auto">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                      Minimum
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-purple-600">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={10000}
+                        value={form.budget_min}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            budget_min: Math.max(0, parseInt(e.target.value, 10) || 0),
+                          }))
+                        }
+                        className="w-full sm:w-32 pl-10 pr-4 py-4 text-2xl font-bold rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="text-3xl text-slate-400 dark:text-slate-600">—</div>
+                  <div className="w-full sm:w-auto">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                      Maximum
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-purple-600">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={10000}
+                        value={form.budget_max}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            budget_max: Math.max(0, parseInt(e.target.value, 10) || 0),
+                          }))
+                        }
+                        className="w-full sm:w-32 pl-10 pr-4 py-4 text-2xl font-bold rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    We'll find great options in your price range
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mt-6 p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+              <p className="text-red-600 dark:text-red-400 text-sm font-medium">{error}</p>
+            </div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="flex gap-3 mt-8">
+            {step > 0 && (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="px-6 py-4 rounded-2xl border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300"
               >
-                <input
-                  type="checkbox"
-                  checked={form.daily_life.includes(value)}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      daily_life: e.target.checked
-                        ? [...f.daily_life, value as DailyLife]
-                        : f.daily_life.filter((x) => x !== value),
-                    }))
-                  }
-                  className="rounded border-slate-300 text-amber-500"
-                />
-                <span className="text-sm font-medium">{label}</span>
-              </label>
-            ))}
+                Back
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={loading}
+              className="flex-1 px-8 py-4 rounded-2xl btn-gradient text-white text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-3">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Finding perfect gifts...
+                </span>
+              ) : step === STEPS.length - 1 ? (
+                "Find My Perfect Gifts ✨"
+              ) : (
+                "Continue"
+              )}
+            </button>
           </div>
-        )}
+        </div>
 
-        {currentKey === "avoid" && (
-          <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="Things to avoid (e.g. alcohol, sweets)"
-              value={form.avoid_list.join(", ")}
-              onChange={(e) =>
-                setForm((f) => ({
-                  ...f,
-                  avoid_list: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-                }))
-              }
-              className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 focus:ring-2 focus:ring-amber-400"
-            />
-            <textarea
-              placeholder="Any extra notes (1–2 sentences)"
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value.slice(0, 500) }))}
-              rows={3}
-              className="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 resize-none focus:ring-2 focus:ring-amber-400"
-            />
-          </div>
-        )}
-      </div>
-
-      {error && (
-        <p className="text-red-600 dark:text-red-400 text-sm mb-4" role="alert">
-          {error}
-        </p>
-      )}
-
-      <div className="flex gap-3">
-        {step > 0 && (
-          <button
-            type="button"
-            onClick={handleBack}
-            className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700"
-          >
-            Back
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={loading}
-          className="flex-1 px-5 py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 disabled:opacity-50 shadow-md"
-        >
-          {loading ? "Finding gifts…" : step === STEPS.length - 1 ? "Get my ideas" : "Continue"}
-        </button>
-      </div>
+        {/* Footer */}
+        <div className="text-center text-white/60 text-sm">
+          <p>Personalized recommendations in seconds • 100% free</p>
+        </div>
       </div>
     </main>
   );

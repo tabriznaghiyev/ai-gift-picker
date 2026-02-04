@@ -155,30 +155,31 @@ export async function POST(request: NextRequest) {
       {
         step: 1,
         title: "Built your profile",
-        description: `We used your answers: ${form.occasion} gift for ${form.relationship}, age ${form.age_range}, budget $${form.budget_min}–$${form.budget_max}${form.interests.length ? `, interests: ${form.interests.slice(0, 3).join(", ")}` : ""}.`,
+        description: `Used your selections: ${form.occasion} gift for ${form.relationship}, age ${form.age_range}, budget $${form.budget_min}–$${form.budget_max}`,
       },
       {
         step: 2,
         title: "Filtered our catalog",
-        description: `We found ${candidatesCount} products that match your budget and preferences.`,
+        description: `Found ${candidatesCount} products matching your criteria`,
       },
       {
         step: 3,
-        title: usedML ? "Ranked with our ML model" : "Ranked by match",
+        title: usedML ? "Ranked with ML model" : "Ranked by relevance",
         description: usedML
-          ? "Our trained model scored each product for relevance to your profile and reordered the list."
-          : "We scored each product by how well it matches your occasion, interests, and lifestyle.",
+          ? "AI scored products for your profile"
+          : "Scored by occasion, interests, and lifestyle match",
       },
       {
         step: 4,
-        title: "Selected your top 6",
-        description: "We picked the best 3 as top picks and 3 more as alternatives, with short reasons for each.",
+        title: "Selected top 6",
+        description: "Best 3 as top picks, 3 more as alternatives",
       },
     ];
 
     return NextResponse.json({
       session_id: sessionId,
       profile,
+      quiz_form: form,
       top_3: top3Enriched,
       alternatives_3: alt3Enriched,
       steps,
