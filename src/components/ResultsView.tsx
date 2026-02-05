@@ -106,9 +106,48 @@ export function ResultsView({
           </div>
         </header>
 
+        {/* Top 3 Picks */}
+        <section className="mb-10">
+          <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
+            <span className="text-4xl">🎯</span>
+            Top 3 Matches
+          </h2>
+          <div className="grid gap-6 lg:grid-cols-3">
+            {top_3.map((item, idx) => (
+              <GiftCard
+                key={item.id}
+                item={item}
+                matchPercentage={getMatchPercentage(item.score)}
+                rank={idx + 1}
+                animationDelay={idx * 100}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* More Ideas */}
+        {alternatives_3.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+              <span className="text-3xl">💡</span>
+              More Great Options
+            </h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {alternatives_3.map((item, idx) => (
+                <GiftCard
+                  key={item.id}
+                  item={item}
+                  matchPercentage={getMatchPercentage(item.score)}
+                  animationDelay={(top_3.length + idx) * 100}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Analysis Section - Show Quiz Choices vs Results */}
         {showAnalysis && quizForm && (
-          <section className="mb-10 glass rounded-3xl p-6 sm:p-8 animate-scale-in">
+          <section className="mb-10 glass rounded-3xl p-6 sm:p-8 animate-scale-in border-2 border-white/20">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
               <span className="text-3xl">📊</span>
               Your Choices vs Recommendations
@@ -180,7 +219,7 @@ export function ResultsView({
 
         {/* How We Picked Section */}
         {steps.length > 0 && (
-          <section className="mb-10 glass rounded-3xl p-6 sm:p-8 animate-scale-in">
+          <section className="mb-10 glass rounded-3xl p-6 sm:p-8 animate-scale-in border-2 border-white/20">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-3">
               <span className="text-3xl">🔍</span>
               How Our Algorithm Worked
@@ -198,45 +237,6 @@ export function ResultsView({
                 </li>
               ))}
             </ol>
-          </section>
-        )}
-
-        {/* Top 3 Picks */}
-        <section className="mb-10">
-          <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
-            <span className="text-4xl">🎯</span>
-            Top 3 Matches
-          </h2>
-          <div className="grid gap-6 lg:grid-cols-3">
-            {top_3.map((item, idx) => (
-              <GiftCard
-                key={item.id}
-                item={item}
-                matchPercentage={getMatchPercentage(item.score)}
-                rank={idx + 1}
-                animationDelay={idx * 100}
-              />
-            ))}
-          </div>
-        </section>
-
-        {/* More Ideas */}
-        {alternatives_3.length > 0 && (
-          <section className="mb-10">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <span className="text-3xl">💡</span>
-              More Great Options
-            </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {alternatives_3.map((item, idx) => (
-                <GiftCard
-                  key={item.id}
-                  item={item}
-                  matchPercentage={getMatchPercentage(item.score)}
-                  animationDelay={(top_3.length + idx) * 100}
-                />
-              ))}
-            </div>
           </section>
         )}
 
@@ -342,7 +342,7 @@ function GiftCard({
 
   return (
     <div
-      className="glass rounded-3xl p-6 shadow-xl transition-all duration-500 card-hover animate-scale-in group"
+      className="glass rounded-3xl p-6 shadow-xl transition-all duration-500 card-hover animate-scale-in group flex flex-col h-full"
       style={{ animationDelay: `${animationDelay}ms` }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -386,49 +386,53 @@ function GiftCard({
         />
       </div>
 
-      <div className="space-y-3">
-        <div>
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-            {item.title}
-          </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
-            {item.description}
-          </p>
-        </div>
-
-        <div className="text-2xl font-bold gradient-text">
-          {price}
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
-            Why this gift:
-          </p>
-          <ul className="space-y-1.5">
-            {Array.isArray(item.why_bullets) &&
-              item.why_bullets.map((bullet, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
-                  <span className="text-purple-500 mt-0.5">•</span>
-                  <span>{bullet}</span>
-                </li>
-              ))}
-          </ul>
-        </div>
-
-        {item.amazon_url ? (
-          <a
-            href={item.amazon_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full text-center px-6 py-3 rounded-2xl btn-gradient text-white font-bold mt-4"
-          >
-            View on Amazon →
-          </a>
-        ) : (
-          <div className="text-center py-3 text-sm text-slate-400">
-            Link coming soon
+      <div className="flex flex-col flex-grow">
+        <div className="space-y-3 flex-grow">
+          <div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+              {item.title}
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+              {item.description}
+            </p>
           </div>
-        )}
+
+          <div className="text-2xl font-bold gradient-text">
+            {price}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+              Why this gift:
+            </p>
+            <ul className="space-y-1.5">
+              {Array.isArray(item.why_bullets) &&
+                item.why_bullets.map((bullet, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <span className="text-purple-500 mt-0.5">•</span>
+                    <span>{bullet}</span>
+                  </li>
+                ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          {item.amazon_url ? (
+            <a
+              href={item.amazon_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full text-center px-6 py-3 rounded-2xl btn-gradient text-white font-bold"
+            >
+              View on Amazon →
+            </a>
+          ) : (
+            <div className="text-center py-3 text-sm text-slate-400">
+              Link coming soon
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
