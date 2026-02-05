@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   OCCASIONS,
   RELATIONSHIPS,
@@ -11,6 +11,7 @@ import {
   type AgeRange,
 } from "@/types/quiz";
 import { ResultsView } from "@/components/ResultsView";
+import { AISearchInput } from "@/components/AISearchInput";
 
 // Simplified to 4 essential steps
 const STEPS = [
@@ -39,6 +40,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Awaited<ReturnType<typeof fetchRecommend>> | null>(null);
+
+  // Memoized callback for AI search input to prevent infinite re-renders
+  const handleAISearch = useCallback((input: string) => {
+    const interests = input.split(/[,.\n]+/).map(s => s.trim()).filter(s => s.length > 2);
+    setForm(f => ({ ...f, notes: input, interests }));
+  }, []);
 
   async function fetchRecommend(body: QuizForm) {
     const res = await fetch("/api/recommend", {
@@ -267,39 +274,11 @@ export default function Home() {
             )}
 
             {currentKey === "interests" && (
-              <div className="space-y-4 animate-scale-in">
-                <div className="flex justify-between items-center px-1">
-                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Advanced Research
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wide">
-                    Coming Soon
-                  </span>
-                </div>
-                <textarea
-                  placeholder="e.g. Loves photography, hiking, 90s rock, and cooking Italian food..."
-                  className="w-full h-40 p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all text-lg resize-none placeholder:text-slate-400"
-                  value={form.notes}
-                  onChange={(e) => {
-                    const text = e.target.value;
-                    const interests = text.split(/[,.\n]+/).map(s => s.trim()).filter(s => s.length > 2);
-                    setForm(f => ({ ...f, notes: text, interests }));
-                  }}
-                  autoFocus
-                />
-                <div className="flex gap-2 justify-center flex-wrap">
-                  {form.interests.slice(0, 5).map((interest, i) => (
-                    <span key={i} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium animate-pop">
-                      #{interest}
-                    </span>
-                  ))}
-                  {form.interests.length === 0 && (
-                    <p className="text-sm text-slate-500 italic">
-                      This AI feature is optional. Feel free to skip!
-                    </p>
-                  )}
-                </div>
-              </div>
+              <AISearchInput
+                onSearch={handleAISearch}
+                loading={false}
+                error={null}
+              />
             )}
 
             {currentKey === "budget" && (
@@ -412,14 +391,13 @@ export default function Home() {
                 "Continue"
               )}
             </button>
-            {currentKey === "interests" && form.interests.length === 0 && (
+            {currentKey === "interests" && (
               <button
                 type="button"
                 onClick={handleNext}
-                className="mx-auto block sm:hidden text-slate-400 text-sm font-medium hover:text-slate-600 transition-colors"
-                style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, paddingBottom: '1rem', textAlign: 'center' }}
+                className="px-6 py-4 rounded-2xl border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300"
               >
-                Skip this step
+                Skip
               </button>
             )}
           </div>

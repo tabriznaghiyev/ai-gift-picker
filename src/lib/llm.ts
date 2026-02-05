@@ -165,3 +165,144 @@ Rules: product_id must be exactly one of the ids above. Keep bullets short. No m
   };
   return fallback;
 }
+
+/**
+ * Extract structured QuizForm data from natural language input.
+ * Uses GPT-4o-mini with carefully crafted prompts for cost-effective extraction.
+ */
+export async function extractQuizFromNaturalLanguage(userInput: string): Promise<QuizForm> {
+  const QUIZ_EXTRACTION_SCHEMA = {
+    type: "object",
+    properties: {
+      occasion: {
+        type: "string",
+        enum: ["birthday", "anniversary", "housewarming", "graduation", "thank-you", "holiday", "baby-shower", "other"],
+      },
+      relationship: {
+        type: "string",
+        enum: ["friend", "partner", "parent", "coworker", "sibling", "child", "other"],
+      },
+      age_range: {
+        type: "string",
+        enum: ["0-12", "13-17", "18-24", "25-34", "35-44", "45-54", "55+"],
+      },
+      budget_min: { type: "number" },
+      budget_max: { type: "number" },
+      interests: {
+        type: "array",
+        items: { type: "string" },
+      },
+      notes: { type: "string" },
+    },
+    required: ["occasion", "relationship", "age_range", "budget_min", "budget_max", "interests", "notes"],
+  };
+
+  const systemPrompt = `You are a gift recommendation assistant. Extract structured gift preferences from natural language input.
+
+Output ONLY valid JSON with this exact structure:
+{
+  "occasion": one of ["birthday", "anniversary", "housewarming", "graduation", "thank-you", "holiday", "baby-shower", "other"],
+  "relationship": one of ["friend", "partner", "parent", "coworker", "sibling", "child", "other"],
+  "age_range": one of ["0-12", "13-17", "18-24", "25-34", "35-44", "45-54", "55+"],
+  "budget_min": number,
+  "budget_max": number,
+  "interests": array of strings (3-5 keywords),
+  "notes": string (original input for reference)
+}
+
+EXTRACTION RULES:
+1. Infer age_range from context clues:
+   - "brother who games" → likely "18-24" or "25-34"
+   - "mom" or "dad" → likely "45-54" or "55+"
+   - "coworker" → likely "25-34" or "35-44"
+   - "child" or "kid" → "0-12" or "13-17"
+   - If unclear, default to "25-34"
+
+2. Extract budget with 20% flexibility:
+   - "$50" → min: 40, max: 60
+   - "$100-150" → min: 100, max: 150
+   - "under $30" → min: 20, max: 30
+   - "around $75" → min: 60, max: 90
+   - If no budget mentioned, default to min: 20, max: 80
+
+3. Identify 3-5 key interests/keywords:
+   - Extract hobbies, activities, preferences
+   - Keep each interest 1-3 words
+   - Examples: "gaming", "coffee", "yoga", "technology", "cooking"
+
+4. Use sensible defaults for missing information:
+   - occasion: "birthday" (most common)
+   - relationship: "friend" (most common)
+
+5. Store original input in "notes" field for reference.
+
+EXAMPLES:
+
+Input: "Birthday gift for my tech-savvy brother who loves gaming, around $50"
+Output: {
+  "occasion": "birthday",
+  "relationship": "sibling",
+  "age_range": "18-24",
+  "budget_min": 40,
+  "budget_max": 60,
+  "interests": ["gaming", "technology", "electronics"],
+  "notes": "Birthday gift for my tech-savvy brother who loves gaming, around $50"
+}
+
+Input: "Anniversary gift for my wife, she loves yoga and reading, budget $100-150"
+Output: {
+  "occasion": "anniversary",
+  "relationship": "partner",
+  "age_range": "25-34",
+  "budget_min": 100,
+  "budget_max": 150,
+  "interests": ["yoga", "reading", "wellness", "books"],
+  "notes": "Anniversary gift for my wife, she loves yoga and reading, budget $100-150"
+}
+
+Input: "Something for my coworker's baby shower, under $30"
+Output: {
+  "occasion": "baby-shower",
+  "relationship": "coworker",
+  "age_range": "25-34",
+  "budget_min": 20,
+  "budget_max": 30,
+  "interests": ["baby", "parenting", "newborn"],
+  "notes": "Something for my coworker's baby shower, under $30"
+}`;
+
+  const userPrompt = `Extract gift preferences from this input: "${userInput}"`;
+
+  const openai = getOpenAI();
+  const res = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "quiz_extraction",
+        strict: true,
+        schema: QUIZ_EXTRACTION_SCHEMA,
+      },
+    },
+    temperature: 0.3, // More deterministic
+    max_tokens: 300,
+  });
+
+  const raw = res.choices[0]?.message?.content;
+  if (!raw) throw new Error("Empty extraction response from OpenAI");
+
+  const parsed = JSON.parse(raw) as QuizForm;
+
+  // Validate and sanitize
+  parsed.budget_min = Math.max(0, Math.min(parsed.budget_min, 10000));
+  parsed.budget_max = Math.max(parsed.budget_min, Math.min(parsed.budget_max, 10000));
+  parsed.interests = parsed.interests.slice(0, 10); // Limit to 10 interests
+  parsed.daily_life = []; // Not extracted from natural language (optional field)
+  parsed.avoid_list = []; // Not extracted from natural language (optional field)
+
+  return parsed;
+}
